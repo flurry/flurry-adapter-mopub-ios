@@ -10,13 +10,9 @@
 
 @interface FlurryAdsCustomRouter : NSObject <FlurryAdDelegate>
 
-// Map of the ad spaces that holds click status
-@property (nonatomic,strong) NSMutableDictionary *adSpaceClickMap;
-
 + (FlurryAdsCustomRouter *)sharedRouter;
 
 - (void)setRouter:(id<FlurryAdDelegate>)router forSpace:(NSString *)space;
-- (void)setClickStatus:(BOOL)status forSpace:(NSString*)space;
 
 @end
 
@@ -27,5 +23,22 @@
 
 - (FlurryAdsCustomRouter *)sharedFlurryAdsCustomRouter;
 - (void) delegateFlurry: id;
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@interface MPFlurryAdDelegate : NSObject
+
+// Map of the ad spaces that holds click status
+@property (nonatomic,strong) NSMutableDictionary *adSpaceClickMap;
+// Map of the ad spaces within the application
+@property (nonatomic,strong) NSMutableDictionary *adSpaceToEventsMap;
+// Map within adSpaceToEventsMap that holds multiple events
+@property (nonatomic,strong) NSMutableDictionary *adSpaceToViewMap;
+
+- (void)setClickStatus:(BOOL)status forSpace:(NSString*)space;
+- (void)setView:(UIView *)view forSpace:(NSString *)space;
+- (UIView *)viewForSpace:(NSString *)adSpace;
 
 @end

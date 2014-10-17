@@ -25,12 +25,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface MPFlurryInterstitialRouter : FlurryAdsCustomRouter
+@interface MPFlurryInterstitialDelegate : MPFlurryAdDelegate <FlurryAdDelegate>
 
-@property (nonatomic, strong) NSMutableDictionary *adspaceToEventsMap;
-
-+ (MPFlurryInterstitialRouter *)sharedRouter;
-
++ (MPFlurryInterstitialDelegate *)sharedInstance;
 
 - (void)fetchTakeoverForSpace:(NSString *)adSpace
                   forFlurryTakoverCustomEvent:(FlurryInterstitialCustomEvent *)event;
@@ -49,16 +46,16 @@
 
 @interface MPInstanceProvider (FlurryTakeovers)
 
-- (MPFlurryInterstitialRouter *)sharedMPFlurryTakoverRouter;
+- (MPFlurryInterstitialDelegate *)sharedMPFlurryTakoverRouter;
 @end
 
 @implementation MPInstanceProvider (FlurryTakeovers)
 
-- (MPFlurryInterstitialRouter *)sharedMPFlurryTakoverRouter
+- (MPFlurryInterstitialDelegate *)sharedMPFlurryTakoverRouter
 {
-    return [self singletonForClass:[MPFlurryInterstitialRouter class]
+    return [self singletonForClass:[MPFlurryInterstitialDelegate class]
                           provider:^id{
-                              return [[MPFlurryInterstitialRouter alloc] init];
+                              return [[MPFlurryInterstitialDelegate alloc] init];
                           }];
 }
 
@@ -79,23 +76,25 @@
 
 - (void)requestInterstitialWithCustomEventInfo:(NSDictionary *)info
 {
+    MPLogInfo(@"MoPub instructs Flurry to display an ad in [%@]" , [info objectForKey:@"adSpaceName"]);
+    
     self.adSpaceName = [info objectForKey:@"adSpaceName"];
     if (!self.adSpaceName) {
         self.adSpaceName = FlurryAdSpaceTakeoverName;
     }
     
-    [[MPInstanceProvider sharedProvider] delegateFlurry:[MPFlurryInterstitialRouter sharedRouter]];
+    [[MPInstanceProvider sharedProvider] delegateFlurry:[FlurryAdsCustomRouter sharedRouter]];
     
-    [[MPFlurryInterstitialRouter sharedRouter] fetchTakeoverForSpace:self.adSpaceName
+    [[MPFlurryInterstitialDelegate sharedInstance] fetchTakeoverForSpace:self.adSpaceName
                                      forFlurryTakoverCustomEvent:self];
 }
 
 
 - (void)showInterstitialFromRootViewController:(UIViewController *)rootViewController
 {
-    if ([[MPFlurryInterstitialRouter sharedRouter]isTakeoverAvailableForSpace:self.adSpaceName] )
+    if ([[MPFlurryInterstitialDelegate sharedInstance]isTakeoverAvailableForSpace:self.adSpaceName] )
     {
-        [[MPFlurryInterstitialRouter sharedRouter] displayTakeoverForSpace:self.adSpaceName
+        [[MPFlurryInterstitialDelegate sharedInstance] displayTakeoverForSpace:self.adSpaceName
                                                                onViewController:rootViewController
                                                               forFlurryTakoverCustomEvent:self];
     } 
@@ -119,12 +118,10 @@
  * events to all of the custom event instances.
  */
 
-@implementation MPFlurryInterstitialRouter
-
-@synthesize adspaceToEventsMap = _adspaceToEventsMap;
+@implementation MPFlurryInterstitialDelegate
 
 
-+ (MPFlurryInterstitialRouter *)sharedRouter
++ (MPFlurryInterstitialDelegate *)sharedInstance
 {
     return [[MPInstanceProvider sharedProvider] sharedMPFlurryTakoverRouter];
 }
@@ -133,7 +130,7 @@
 {
     self = [super init];
     if (self) {
-        self.adspaceToEventsMap = [NSMutableDictionary dictionary];
+        self.adSpaceClickMap = [NSMutableDictionary dictionary];
     }
     
     return self;
@@ -146,7 +143,7 @@
     // Remove all pre-cached ads
     [self removeAdsFromFlurryCache];
     
-    self.adspaceToEventsMap = nil;
+    self.adSpaceClickMap = nil;
 }
 
 - (void)fetchTakeoverForSpace:(NSString *)adSpace
@@ -155,7 +152,7 @@
     MPLogInfo(@"Flurry Ads being fethced for [%@]" , adSpace);
     
     [self setEvent:event forSpace:adSpace];
-    [self setRouter:self forSpace:adSpace];
+    [[FlurryAdsCustomRouter sharedRouter] setRouter:self forSpace:adSpace];
     
     CGSize size =    [[UIScreen mainScreen] bounds].size;
     CGRect theRect = CGRectMake(0, 0, size.width, size.height);
@@ -177,19 +174,19 @@
     
     [self setEvent:event forSpace:adSpace];
     
-    [FlurryAds displayAdForSpace:adSpace onView:adViewController.view];
+    [FlurryAds displayAdForSpace:adSpace onView:adViewController.view viewControllerForPresentation:adViewController];
 }
 
 - (FlurryInterstitialCustomEvent *)eventForSpace:(NSString *)space{
-    return [self.adspaceToEventsMap objectForKey:space];
+    return [self.adSpaceToEventsMap objectForKey:space];
 }
 
 - (void)setEvent:(FlurryInterstitialCustomEvent *)event forSpace:(NSString *)space {
-    [self.adspaceToEventsMap setObject:event forKey:space];
+    [self.adSpaceToEventsMap setObject:event forKey:space];
 }
 
 - (void)removeAdsFromFlurryCache {
-    for (NSString *adspace in [self.adspaceToEventsMap keyEnumerator]) {
+    for (NSString *adspace in [self.adSpaceToEventsMap keyEnumerator]) {
         [FlurryAds removeAdFromSpace:adspace];
     }
 }

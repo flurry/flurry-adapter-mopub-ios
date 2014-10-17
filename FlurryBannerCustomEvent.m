@@ -25,17 +25,11 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-@interface MPFlurryBannerRouter : FlurryAdsCustomRouter
-
-// Map of the ad spaces within the application
-@property (nonatomic,strong) NSMutableDictionary *adSpaceToEventsMap;
-// Map within adSpaceToEventsMap that holds multiple events
-@property (nonatomic,strong) NSMutableDictionary *adSpaceToViewMap;
+@interface MPFlurryBannerDelegate : MPFlurryAdDelegate <FlurryAdDelegate>
 
 @property (nonatomic, assign) CGRect adViewFrame;
 
-+ (MPFlurryBannerRouter *)sharedRouter;
-
++ (MPFlurryBannerDelegate *)sharedInstance;
 
 - (BOOL)isBannerAvailableForSpace:(NSString *) adSpace;
 
@@ -46,28 +40,26 @@
 - (void)displayBannerForSpace:(NSString *)adSpace
    forFlurryBannerCustomEvent:(FlurryBannerCustomEvent *)event;
 
-
 - (FlurryBannerCustomEvent *)eventForSpace:(NSString *)space isOnScreen:(BOOL)onScreen;
 - (void)setEvent:(FlurryBannerCustomEvent *)event forSpace:(NSString *)space;
 - (void)invalidateEvent:(FlurryBannerCustomEvent *)event forSpace:(NSString *)space;
 - (BOOL)isEvent: (FlurryBannerCustomEvent *)event forSpace:(NSString *)space ;
-
 
 @end
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @interface MPInstanceProvider (FlurryBanners)
-- (MPFlurryBannerRouter *)sharedMPFlurryBannerRouter;
+- (MPFlurryBannerDelegate *)sharedMPFlurryBannerDelegate;
 @end
 
 @implementation MPInstanceProvider (FlurryBanners)
 
-- (MPFlurryBannerRouter *)sharedMPFlurryBannerRouter
+- (MPFlurryBannerDelegate *)sharedMPFlurryBannerDelegate
 {
-    return [self singletonForClass:[MPFlurryBannerRouter class]
+    return [self singletonForClass:[MPFlurryBannerDelegate class]
                           provider:^id{
-                              return [[MPFlurryBannerRouter alloc] init];
+                              return [[MPFlurryBannerDelegate alloc] init];
                           }];
 }
 
@@ -84,11 +76,12 @@
 
 
 @implementation FlurryBannerCustomEvent
+
 @synthesize onScreen = _onScreen;
 
 - (void)requestAdWithSize:(CGSize)size customEventInfo:(NSDictionary *)info
 {
-    MPLogInfo(@"MoPub instructs Flurry to display an ad, %@, of size: %f, %f" , self, size.width, size.height);
+    MPLogInfo(@"MoPub instructs Flurry to display an ad in [%@], of size: %f, %f" , [info objectForKey:@"adSpaceName"], size.width, size.height);
     
     self.adSpaceName = [info objectForKey:@"adSpaceName"];
     if (!self.adSpaceName) {
@@ -98,15 +91,15 @@
     self.onScreen = NO;
     CGRect theRect = CGRectMake(0, 0, size.width, size.height);
     
-    [[MPInstanceProvider sharedProvider] delegateFlurry:[MPFlurryBannerRouter sharedRouter]];
+    [[MPInstanceProvider sharedProvider] delegateFlurry:[FlurryAdsCustomRouter sharedRouter]];
     
-    if ([[MPFlurryBannerRouter sharedRouter] isBannerAvailableForSpace:self.adSpaceName] ) {
+    if ([[MPFlurryBannerDelegate sharedInstance] isBannerAvailableForSpace:self.adSpaceName] ) {
         
-        [[MPFlurryBannerRouter sharedRouter] displayBannerForSpace:self.adSpaceName  forFlurryBannerCustomEvent:self];
+        [[MPFlurryBannerDelegate sharedInstance] displayBannerForSpace:self.adSpaceName  forFlurryBannerCustomEvent:self];
         
     } else {
        
-        [[MPFlurryBannerRouter sharedRouter] fetchBannerForSpace:self.adSpaceName
+        [[MPFlurryBannerDelegate sharedInstance] fetchBannerForSpace:self.adSpaceName
                                                   forAdViewFrame:theRect
                                       forFlurryBannerCustomEvent:self];
     }
@@ -116,7 +109,7 @@
 - (void)invalidate {
     MPLogInfo(@"MoPub invalidate Flurry Custom Event, %@" , self);
     self.onScreen = NO;
-    [[MPFlurryBannerRouter sharedRouter] invalidateEvent:self forSpace:self.adSpaceName];
+    [[MPFlurryBannerDelegate sharedInstance] invalidateEvent:self forSpace:self.adSpaceName];
     
 }
 
@@ -144,23 +137,19 @@
  * events to all of the custom event instances.
  */
 
-@implementation MPFlurryBannerRouter
+@implementation MPFlurryBannerDelegate
 
-@synthesize adSpaceToEventsMap = _adSpaceToEventsMap;
-@synthesize adSpaceToViewMap = _adSpaceToViewMap;
 @synthesize adViewFrame = _adViewFrame;
 
-+ (MPFlurryBannerRouter *)sharedRouter
++ (MPFlurryBannerDelegate *)sharedInstance
 {
-    return [[MPInstanceProvider sharedProvider] sharedMPFlurryBannerRouter];
+    return [[MPInstanceProvider sharedProvider] sharedMPFlurryBannerDelegate];
 }
 
 - (id)init
 {
     self = [super init];
     if (self) {
-        self.adSpaceToEventsMap = [NSMutableDictionary dictionary];
-        self.adSpaceToViewMap = [NSMutableDictionary dictionary];
     }
     
     return self;
@@ -168,9 +157,7 @@
 
 - (void)dealloc
 {
-    MPLogInfo(@"dealloc Flurry Banner Router");
-    self.adSpaceToEventsMap = nil;
-    self.adSpaceToViewMap = nil;
+    MPLogInfo(@"dealloc Flurry Banner Delegate");
 }
 
 - (void)fetchBannerForSpace:(NSString *)adSpace
@@ -179,7 +166,7 @@
     
     MPLogInfo(@"Flurry Ads being fetched for [%@]" , adSpace);
     [self setEvent:event forSpace:adSpace];
-    [self setRouter:self forSpace:adSpace];
+    [[FlurryAdsCustomRouter sharedRouter] setRouter:self forSpace:adSpace];
     self.adViewFrame = adViewFrame;
     
     [FlurryAds fetchAdForSpace:adSpace frame:adViewFrame size:FlurryAdPlacement];
@@ -212,19 +199,10 @@
     }
     
     if ([self isEvent:event forSpace:adSpace]) {
-        [FlurryAds displayAdForSpace:adSpace onView:[self viewForSpace:adSpace]];
+        [FlurryAds displayAdForSpace:adSpace onView:[self viewForSpace:adSpace] viewControllerForPresentation:[event.delegate viewControllerForPresentingModalView]];
     } else {
         MPLogInfo(@"No valid event found skipping the display");
     }
-}
-
-// Flurry maintains one view for one adSpace, hold on to this view
-- (void)setView:(UIView *)view forSpace:(NSString *)space {
-    [self.adSpaceToViewMap setObject:view forKey:space];
-}
-
-- (UIView *)viewForSpace:(NSString *)adSpace {
-    return [self.adSpaceToViewMap objectForKey:adSpace];
 }
 
 - (FlurryBannerCustomEvent *)eventForSpace:(NSString *)space isOnScreen:(BOOL)onScreen{
@@ -305,7 +283,6 @@
     [self displayBannerForSpace:adSpace forFlurryBannerCustomEvent:[self eventForSpace:adSpace isOnScreen:NO]];
 }
 
-
 - (void)spaceDidFailToReceiveAd:(NSString*)adSpace error:(NSError *)error
 {
     MPLogInfo(@"Flurry Ad Space [%@] spaceDidFailToReceiveAd   %@", adSpace, error.userInfo[@"NSLocalizedDescription"]);
@@ -319,6 +296,32 @@
     return YES;
 }
 
+- (void) spaceDidRender:(NSString *)space interstitial:(BOOL)interstitial {
+    MPLogInfo(@"Flurry Ad Space [%@] did render Ad for interstitial [%d]  ", space, interstitial);
+    // Tell MoPub Flurry ad is about to be rendered
+    // If Flurry ad rotation frequency is greater than that of mopub we need to count more impressions.
+    FlurryBannerCustomEvent * customEvent;
+    customEvent = [self eventForSpace:space isOnScreen:YES];
+    if (customEvent != nil)
+    {
+        customEvent.onScreen = NO;
+    }
+    
+    customEvent = [self eventForSpace:space isOnScreen:NO];
+    if (customEvent != nil)
+    {
+        [customEvent.delegate trackImpression];
+        [customEvent.delegate bannerCustomEvent:customEvent didLoadAd:[self viewForSpace:space]];
+        //  Set the ad space click map to unclicked as we have new ad to show
+        [self.adSpaceClickMap setObject:[NSNumber numberWithBool:NO] forKey:space];
+    }
+}
+
+- (void) spaceDidFailToRender:(NSString *) adSpace error:(NSError *)error {
+    MPLogInfo(@"Flurry Ad Space [%@] Did Fail to Render with error [%@]  ", adSpace, error);
+    [[self eventForSpace:adSpace isOnScreen:NO].delegate bannerCustomEvent:[self eventForSpace:adSpace isOnScreen:NO] didFailToLoadAdWithError:error];
+}
+
 - (void)spaceDidReceiveClick:(NSString*)adSpace
 {
     MPLogInfo(@"Flurry Ad Space [%@] Did Receive Click  ", adSpace);
@@ -328,7 +331,6 @@
         [self.adSpaceClickMap setObject:[NSNumber numberWithBool:YES] forKey:adSpace];
     }
 }
-
 
 - (void) videoDidFinish:(NSString *)adSpace{
     MPLogInfo(@"Flurry Ad Space [%@] Video Did Finish   ", adSpace);
@@ -355,24 +357,6 @@
     
 }
 
-- (void) spaceDidRender:(NSString *)space interstitial:(BOOL)interstitial {
-    MPLogInfo(@"Flurry Ad Space [%@] did render Ad for interstitial [%d]  ", space, interstitial);
-    // Tell MoPub Flurry ad is about to be rendered
-    FlurryBannerCustomEvent * customEvent = [self eventForSpace:space isOnScreen:NO];
-    if (customEvent != nil)
-    {
-        [customEvent.delegate trackImpression];
-        [customEvent.delegate bannerCustomEvent:customEvent didLoadAd:[self viewForSpace:space]];
-        //  Set the ad space click map to unclicked as we have new ad to show
-        [self.adSpaceClickMap setObject:[NSNumber numberWithBool:NO] forKey:space];
-    }
-}
-
-- (void) spaceDidFailToRender:(NSString *) adSpace error:(NSError *)error {
-    MPLogInfo(@"Flurry Ad Space [%@] Did Fail to Render with error [%@]  ", adSpace, error);
-    [[self eventForSpace:adSpace isOnScreen:NO].delegate bannerCustomEvent:[self eventForSpace:adSpace isOnScreen:NO] didFailToLoadAdWithError:error];
-}
-
 - (void)spaceWillExpand:(NSString *)adSpace {
     MPLogInfo(@"Flurry Ad Space [%@] Will Expand  ", adSpace);
     [[self eventForSpace:adSpace isOnScreen:YES].delegate bannerCustomEventWillBeginAction:[self eventForSpace:adSpace isOnScreen:YES]];
@@ -381,9 +365,7 @@
 - (void)spaceDidCollapse:(NSString *)adSpace {
     MPLogInfo(@"Flurry Ad Space [%@] Did Collapse  ", adSpace);
     [[self eventForSpace:adSpace isOnScreen:YES].delegate bannerCustomEventDidFinishAction:[self eventForSpace:adSpace isOnScreen:YES]];
-
 }
 
 @end
-
 
