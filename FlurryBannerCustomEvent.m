@@ -81,7 +81,7 @@
 
 - (void)requestAdWithSize:(CGSize)size customEventInfo:(NSDictionary *)info
 {
-    MPLogInfo(@"MoPub instructs Flurry to display an ad in [%@], of size: %f, %f" , [info objectForKey:@"adSpaceName"], size.width, size.height);
+    MPLogInfo(@"MoPub instructs Flurry to display an ad, %@, of size: %f, %f" , self, size.width, size.height);
     
     self.adSpaceName = [info objectForKey:@"adSpaceName"];
     if (!self.adSpaceName) {

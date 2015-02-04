@@ -13,8 +13,8 @@
 #import "FlurryAds.h"
 
 #define FlurryAPIKey @"YOUR_FLURRY_API_KEY"
-#define FlurryMediationOrigin @"Flurry_MoPub_iOS"
-#define FlurryAdapterVersion @"5.4.0.r1"
+#define FlurryMediationOrigin @"Flurry_Mopub_iOS"
+#define FlurryAdapterVersion @"6.0.0.r1"
 
 /*
  * Flurry only provides a shared instance, so only one object may be the FlurryAds delegate at
@@ -71,10 +71,9 @@
         
         [Flurry startSession:FlurryAPIKey];
         [Flurry addOrigin:FlurryMediationOrigin withVersion:FlurryAdapterVersion];
-        //set [Flurry setDebugLogEnabled:YES] to log Flurry interaction;
         [Flurry setDebugLogEnabled:NO];
         
-        MPLogInfo(@"Initialize Flurry Session on %@ via Custom Router version %@: ",FlurryAPIKey, FlurryAdapterVersion );
+        MPLogInfo(@"Intialize Flurry Custom Router, version %@: ",FlurryAdapterVersion );
     }
     
     return self;
