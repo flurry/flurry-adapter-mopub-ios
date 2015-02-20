@@ -1,72 +1,40 @@
 //
-//  FlurryTakoverCustomEvent.m
+//  FlurryInterstitialCustomEvent.m
 //  MoPub Mediates Flurry
 //
-//  Created by Bisera Ferrero on 10/1/13.
-//  Copyright (c) 2013 Flurry. All rights reserved.
+//  Created by Flurry.
+//  Copyright (c) 2015 Yahoo, Inc. All rights reserved.
 //
 
 #import "FlurryInterstitialCustomEvent.h"
-#import "FlurryAdDelegate.h"
-#import "FlurryAds.h"
-#import "FlurryAdsCustomRouter.h"
+#import "FlurryAdInterstitial.h"
+#import "FlurryAdError.h"
+#import "FlurryMPConfig.h"
 
-#import "MPLogging.h"
 #import "MPInstanceProvider.h"
+#import "MPLogging.h"
 
-/* 
- * Provde adSpaceName param when configuring Flurry as the Custom Native Network
- * in the MoPub web interface {"adSpaceName": "YOUR_FLURRY_AD_SPACE_NAME"}.
- * If adSpaceName is not found, this adapter will use "TAKOVER_AD" as the Flurry ad space name 
- */
-#define FlurryAdSpaceTakeoverName @"TAKOVER_AD"
-#define FlurryAdPlacement FULLSCREEN
+@interface MPInstanceProvider (FlurryInterstitials)
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-@interface MPFlurryInterstitialDelegate : MPFlurryAdDelegate <FlurryAdDelegate>
-
-+ (MPFlurryInterstitialDelegate *)sharedInstance;
-
-- (void)fetchTakeoverForSpace:(NSString *)adSpace
-                  forFlurryTakoverCustomEvent:(FlurryInterstitialCustomEvent *)event;
-
-- (BOOL)isTakeoverAvailableForSpace:(NSString *) adSpace;
-
-- (void)displayTakeoverForSpace:(NSString *)adSpace
-                    onViewController:(UIViewController *)adViewController
-                  forFlurryTakoverCustomEvent:(FlurryInterstitialCustomEvent *)event;
-- (FlurryInterstitialCustomEvent *)eventForSpace:(NSString *)space;
-- (void)setEvent:(FlurryInterstitialCustomEvent *)event forSpace:(NSString *)space;
+- (FlurryAdInterstitial *)interstitialForSpace:(NSString *)adSpace delegate:(id<FlurryAdInterstitialDelegate>)delegate;
 
 @end
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+@implementation MPInstanceProvider (FlurryInterstitials)
 
-@interface MPInstanceProvider (FlurryTakeovers)
-
-- (MPFlurryInterstitialDelegate *)sharedMPFlurryTakoverRouter;
-@end
-
-@implementation MPInstanceProvider (FlurryTakeovers)
-
-- (MPFlurryInterstitialDelegate *)sharedMPFlurryTakoverRouter
-{
-    return [self singletonForClass:[MPFlurryInterstitialDelegate class]
-                          provider:^id{
-                              return [[MPFlurryInterstitialDelegate alloc] init];
-                          }];
+- (FlurryAdInterstitial *)interstitialForSpace:(NSString *)adSpace delegate:(id<FlurryAdInterstitialDelegate>)delegate {
+    FlurryAdInterstitial *interstitial = [[FlurryAdInterstitial alloc] initWithSpace:adSpace];
+    interstitial.adDelegate = delegate;
+    return interstitial;
 }
 
 @end
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 @interface  FlurryInterstitialCustomEvent()
 
 @property (nonatomic, strong) NSString *adSpaceName;
+@property (nonatomic, strong) UIView* adView;
+@property (nonatomic, strong) FlurryAdInterstitial* adInterstitial;
 
 @end
 
@@ -76,26 +44,23 @@
 
 - (void)requestInterstitialWithCustomEventInfo:(NSDictionary *)info
 {
+    MPLogInfo(@"MoPub instructs Flurry to display an interstitial ad");
+    [FlurryMPConfig sharedInstance];
+    
     self.adSpaceName = [info objectForKey:@"adSpaceName"];
     if (!self.adSpaceName) {
-        self.adSpaceName = FlurryAdSpaceTakeoverName;
+        self.adSpaceName = FlurryInterstitialAdSpaceTakeoverName;
     }
-    
-    [[MPInstanceProvider sharedProvider] delegateFlurry:[FlurryAdsCustomRouter sharedRouter]];
-    
-    [[MPFlurryInterstitialDelegate sharedInstance] fetchTakeoverForSpace:self.adSpaceName
-                                     forFlurryTakoverCustomEvent:self];
+    self.adInterstitial = [[MPInstanceProvider sharedProvider] interstitialForSpace:self.adSpaceName delegate:self];
+    [self.adInterstitial fetchAd];
 }
 
 
 - (void)showInterstitialFromRootViewController:(UIViewController *)rootViewController
 {
-    if ([[MPFlurryInterstitialDelegate sharedInstance]isTakeoverAvailableForSpace:self.adSpaceName] )
-    {
-        [[MPFlurryInterstitialDelegate sharedInstance] displayTakeoverForSpace:self.adSpaceName
-                                                               onViewController:rootViewController
-                                                              forFlurryTakoverCustomEvent:self];
-    } 
+    if (self.adInterstitial.ready) {
+        [self.adInterstitial presentWithViewControler:rootViewController];
+    }
 }
 
 - (BOOL)enableAutomaticImpressionAndClickTracking
@@ -103,176 +68,56 @@
     return NO;
 }
 
-@end
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*
- * Flurry only provides a shared instance, so only one object may be the FlurryAds delegate at
- * any given time. However, because it is common to request Flurry Takeovers for separate
- * adSpaces in a single app session, we may have multiple instances of our custom event class,
- * all of which are interested in delegate callbacks.
- *
- * MPFlurryTakoverRouter is a singleton that is always the FlurryAd delegate, and dispatches
- * events to all of the custom event instances.
- */
-
-@implementation MPFlurryInterstitialDelegate
-
-
-+ (MPFlurryInterstitialDelegate *)sharedInstance
-{
-    return [[MPInstanceProvider sharedProvider] sharedMPFlurryTakoverRouter];
-}
-
-- (id)init
-{
-    self = [super init];
-    if (self) {
-        self.adSpaceClickMap = [NSMutableDictionary dictionary];
-    }
-    
-    return self;
-}
-
 - (void)dealloc
 {
-    MPLogInfo(@"dealloc Flurry Takover Router");
-    
-    // Remove all pre-cached ads
-    [self removeAdsFromFlurryCache];
-    
-    self.adSpaceClickMap = nil;
+    _adInterstitial.adDelegate = nil;
 }
 
-- (void)fetchTakeoverForSpace:(NSString *)adSpace
- forFlurryTakoverCustomEvent:(FlurryInterstitialCustomEvent *)event {
-    
-    MPLogInfo(@"Flurry Ads being fethced for [%@]" , adSpace);
-    
-    [self setEvent:event forSpace:adSpace];
-    [[FlurryAdsCustomRouter sharedRouter] setRouter:self forSpace:adSpace];
-    
-    CGSize size =    [[UIScreen mainScreen] bounds].size;
-    CGRect theRect = CGRectMake(0, 0, size.width, size.height);
-    
-    [FlurryAds fetchAdForSpace:adSpace frame:theRect size:FlurryAdPlacement];
-    
+#pragma mark - FlurryAdInterstitialDelegate
+
+- (void) adInterstitialDidFetchAd:(FlurryAdInterstitial*)interstitialAd {
+    MPLogInfo(@"Flurry interstital ad was fetched.");
+    [self.delegate interstitialCustomEvent:self didLoadAd:interstitialAd];
 }
 
-- (BOOL)isTakeoverAvailableForSpace:(NSString *) adSpace;
-{
-    return [FlurryAds adReadyForSpace:adSpace];
+- (void) adInterstitialDidRender:(FlurryAdInterstitial*)interstitialAd {
+    MPLogDebug(@"Flurry interstital ad was rendered.");
+    [self.delegate trackImpression];
 }
 
--(void)displayTakeoverForSpace:(NSString *)adSpace
-                   onViewController:(UIViewController *)adViewController
-  forFlurryTakoverCustomEvent:(FlurryInterstitialCustomEvent *)event
-{
-    MPLogInfo(@"Flurry Ads being displayed for [%@]" , adSpace);
-    
-    [self setEvent:event forSpace:adSpace];
-    
-    [FlurryAds displayAdForSpace:adSpace onView:adViewController.view viewControllerForPresentation:adViewController];
+- (void) adInterstitialWillPresent:(FlurryAdInterstitial*)interstitialAd {
+    MPLogDebug(@"Flurry interstital ad will present.");
+    [self.delegate interstitialCustomEventWillAppear:self];
 }
 
-- (FlurryInterstitialCustomEvent *)eventForSpace:(NSString *)space{
-    return [self.adSpaceToEventsMap objectForKey:space];
+- (void) adInterstitialWillLeaveApplication:(FlurryAdInterstitial*)interstitialAd {
+    MPLogDebug(@"Flurry interstital ad will leave application.");
+    [self.delegate interstitialCustomEventWillLeaveApplication:self];
 }
 
-- (void)setEvent:(FlurryInterstitialCustomEvent *)event forSpace:(NSString *)space {
-    [self.adSpaceToEventsMap setObject:event forKey:space];
+- (void) adInterstitialWillDismiss:(FlurryAdInterstitial*)interstitialAd {
+    MPLogDebug(@"Flurry interstital ad will dismiss.");
+    [self.delegate interstitialCustomEventWillDisappear:self];
 }
 
-- (void)removeAdsFromFlurryCache {
-    for (NSString *adspace in [self.adSpaceToEventsMap keyEnumerator]) {
-        [FlurryAds removeAdFromSpace:adspace];
-    }
+- (void) adInterstitialDidDismiss:(FlurryAdInterstitial*)interstitialAd {
+    MPLogDebug(@"Flurry interstital ad did dismiss.");
+    [self.delegate interstitialCustomEventDidDisappear:self];
 }
 
-#pragma mark - FlurryAdDelegate
-
-- (void)spaceDidReceiveAd:(NSString *)adSpace {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Did Receive Ad  ", adSpace);
-    
-    [[self eventForSpace:adSpace].delegate  interstitialCustomEvent:[self eventForSpace:adSpace] didLoadAd:nil];
+- (void) adInterstitialDidReceiveClick:(FlurryAdInterstitial*)interstitialAd {
+    MPLogInfo(@"Flurry interstital ad was clicked.");
+    [self.delegate trackClick];
+    [self.delegate interstitialCustomEventDidReceiveTapEvent:self];
 }
 
-- (void)spaceDidFailToReceiveAd:(NSString *)adSpace error:(NSError *)error {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Did Fail to Receive Ad with error [%@]  ", adSpace, error);
-    [[self eventForSpace:adSpace].delegate interstitialCustomEvent:[self eventForSpace:adSpace] didFailToLoadAdWithError:error];
+- (void) adInterstitialVideoDidFinish:(FlurryAdInterstitial*)interstitialAd {
+    MPLogDebug(@"Flurry interstital video finished.");
 }
 
-- (void) videoDidFinish:(NSString *)adSpace{
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Video Did Finish   ", adSpace);
-}
-
-- (BOOL) spaceShouldDisplay:(NSString*)adSpace interstitial:(BOOL)interstitial {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Should Display Ad for interstitial [%d]  ", adSpace, interstitial);
-    
-    return YES;
-}
-
-- (void)spaceWillDismiss:(NSString *)adSpace interstitial:(BOOL)interstitial {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Will Dismiss for interstitial [%d]  ", adSpace, interstitial);
-    [[self eventForSpace:adSpace].delegate interstitialCustomEventWillDisappear:[self eventForSpace:adSpace]];
-    
-}
-
-- (void)spaceDidDismiss:(NSString *)adSpace interstitial:(BOOL)interstitial {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Did Dismiss for interstitial [%d]  ", adSpace, interstitial);
-    [[self eventForSpace:adSpace].delegate interstitialCustomEventDidDisappear:[self eventForSpace:adSpace]];
-}
-
-- (void)spaceWillLeaveApplication:(NSString *)adSpace {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Will Leave Application  ", adSpace);
-    
-    
-    FlurryInterstitialCustomEvent *customEvent = [self eventForSpace:adSpace];
-    
-    if (![[self.adSpaceClickMap objectForKey:adSpace] boolValue]) {
-        [customEvent.delegate trackClick];
-        [self.adSpaceClickMap setObject:[NSNumber numberWithBool:YES] forKey:adSpace];
-    }
-    
-    [customEvent.delegate interstitialCustomEventWillLeaveApplication:[self eventForSpace:adSpace]];
-}
-
-- (void) spaceDidRender:(NSString *)space interstitial:(BOOL)interstitial {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] did render Ad for interstitial [%d]  ", space, interstitial);
-    FlurryInterstitialCustomEvent * customEvent = [self eventForSpace:space];
-    
-    // Tell MoPub Flurry ad is about to be rendered
-    if (customEvent != nil)
-    {
-        [customEvent.delegate trackImpression];
-        [customEvent.delegate  interstitialCustomEventWillAppear:[self eventForSpace:space]];
-        
-        //  Set the ad space click map to unclicked as we have new ad to show
-        [self.adSpaceClickMap setObject:[NSNumber numberWithBool:NO] forKey:space];
-    }
-}
-
-- (void) spaceDidFailToRender:(NSString *) adSpace error:(NSError *)error {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Did Fail to Render with error [%@]  ", adSpace, error);
-}
-
-- (void) spaceDidReceiveClick:(NSString *)adSpace {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Did Receive Click  ", adSpace);
-    
-    if (![[self.adSpaceClickMap objectForKey:adSpace] boolValue]) {
-        [[self eventForSpace:adSpace].delegate trackClick];
-        [self.adSpaceClickMap setObject:[NSNumber numberWithBool:YES] forKey:adSpace];
-    }
-}
-
-- (void)spaceWillExpand:(NSString *)adSpace {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Will Expand  ", adSpace);
-}
-
-- (void)spaceDidCollapse:(NSString *)adSpace {
-    MPLogInfo(@"FlurryTakover Ad Space [%@] Did Collapse  ", adSpace);
+- (void) adInterstitial:(FlurryAdInterstitial*) interstitialAd adError:(FlurryAdError) adError errorDescription:(NSError*) errorDescription {
+    MPLogInfo(@"Flurry interstitial failed to load with error: %@", errorDescription.description);
+    [self.delegate interstitialCustomEvent:self didFailToLoadAdWithError:nil];
 }
 
 @end
-
-

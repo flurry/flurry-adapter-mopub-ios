@@ -2,16 +2,13 @@
 //  FlurryBannerCustomEvent.h
 //  MoPub Mediates Flurry
 //
-//  Created by Bisera Ferrero on 9/30/13.
-//  Copyright (c) 2013 Flurry. All rights reserved.
+//  Created by Flurry.
+//  Copyright (c) 2015 Yahoo, Inc. All rights reserved.
 //
 
-#import "FlurryAdDelegate.h"
-
 #import "MPBannerCustomEvent.h"
+#import "FlurryAdBannerDelegate.h"
 
-@interface FlurryBannerCustomEvent : MPBannerCustomEvent<FlurryAdDelegate> {
-    
-}
+@interface FlurryBannerCustomEvent : MPBannerCustomEvent <FlurryAdBannerDelegate>
 
 @end
