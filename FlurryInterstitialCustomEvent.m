@@ -59,7 +59,7 @@
 - (void)showInterstitialFromRootViewController:(UIViewController *)rootViewController
 {
     if (self.adInterstitial.ready) {
-        [self.adInterstitial presentWithViewControler:rootViewController];
+        [self.adInterstitial presentWithViewController:rootViewController];
     }
 }
 

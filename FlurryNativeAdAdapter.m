@@ -36,7 +36,7 @@
                 [props setObject:asset.value forKey:kAdTitleKey];
             }
             
-            if ([asset.name isEqualToString:@"secOrigImg"]) {
+            if ([asset.name isEqualToString:@"secImage"]) {
                 [props setObject:asset.value forKey:kAdIconImageKey];
             }
             
@@ -51,6 +51,11 @@
         _properties = props;
     }
     return self;
+}
+
+- (void)dealloc {
+    _adNative.adDelegate = nil;
+    _adNative = nil;
 }
 
 #pragma mark - MPNativeAdAdapter
