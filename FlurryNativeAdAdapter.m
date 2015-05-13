@@ -72,7 +72,7 @@
 
 - (BOOL)enableThirdPartyImpressionTracking
 {
-    return YES;
+    return NO;
 }
 
 - (BOOL)enableThirdPartyClickTracking

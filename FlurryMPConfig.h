@@ -11,7 +11,7 @@
 
 #define FlurryAPIKey @"YOUR API KEY HERE"
 #define FlurryMediationOrigin @"Flurry_Mopub_iOS"
-#define FlurryAdapterVersion @"6.3.0.r1"
+#define FlurryAdapterVersion @"6.4.0.r1"
 
 /*
  * Provde adSpaceName param when configuring Flurry as the Custom Native Network
