@@ -47,6 +47,15 @@
             if ([asset.name isEqualToString:@"summary"]) {
                 [props setObject:asset.value forKey:kAdTextKey];
             }
+           
+            if ([asset.name isEqualToString:@"appRating"]) {
+                [props setObject:asset.value forKey:kAdStarRatingKey];
+            }
+
+            if ([asset.name isEqualToString:@"callToAction"]) {
+                [props setObject:asset.value forKey:kAdCTATextKey];
+            }
+            
         }
         _properties = props;
     }
@@ -77,7 +86,7 @@
 
 - (BOOL)enableThirdPartyClickTracking
 {
-    return YES;
+    return NO;
 }
 
 - (void)willAttachToView:(UIView *)view
@@ -126,6 +135,11 @@
     } else {
         MPLogWarn(@"Delegate does not implement click tracking callback. Clicks likely not being tracked.");
     }
+}
+
+- (void) adNativeDidLogImpression:(FlurryAdNative*) nativeAd {
+    MPLogDebug(@"Flurry native ad was shown (adapter)");
+    
 }
 
 @end

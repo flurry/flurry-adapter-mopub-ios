@@ -9,9 +9,9 @@
 #import <Foundation/Foundation.h>
 #import "Flurry.h"
 
-#define FlurryAPIKey @"YOUR API KEY HERE"
+#define FlurryAPIKey @"YOUR_API_KEY"  // replace this with your own Flurry API key
 #define FlurryMediationOrigin @"Flurry_Mopub_iOS"
-#define FlurryAdapterVersion @"6.4.0.r1"
+#define FlurryAdapterVersion @"7.2.0.r1"
 
 /*
  * Provde adSpaceName param when configuring Flurry as the Custom Native Network

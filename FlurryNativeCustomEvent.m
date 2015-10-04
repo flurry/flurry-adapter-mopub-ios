@@ -82,4 +82,10 @@
     MPLogDebug(@"Flurry native ad was clicked (customEvent)");
 }
 
+- (void) adNativeDidLogImpression:(FlurryAdNative*) nativeAd {
+    MPLogDebug(@"Flurry native ad was shown (customEvent)");
+    
+}
+
+
 @end
