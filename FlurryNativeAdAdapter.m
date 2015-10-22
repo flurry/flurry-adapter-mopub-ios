@@ -79,14 +79,9 @@
     return nil;
 }
 
-- (BOOL)enableThirdPartyImpressionTracking
-{
-    return NO;
-}
-
 - (BOOL)enableThirdPartyClickTracking
 {
-    return NO;
+    return YES;
 }
 
 - (void)willAttachToView:(UIView *)view
@@ -102,22 +97,18 @@
 
 #pragma mark - Flurry Ad Delegates
 
-- (void) adNativeDidFetchAd:(FlurryAdNative *)flurryAd
-{
-    MPLogDebug(@"Flurry native ad fetched (adapter)");
-}
-
-- (void) adNative:(FlurryAdNative*) nativeAd adError:(FlurryAdError) adError errorDescription:(NSError*) errorDescription
-{
-    MPLogDebug(@"Flurry native ad failed to load with error (adapter): %@", errorDescription.description);
-}
-
 - (void) adNativeWillPresent:(FlurryAdNative*) nativeAd {
     MPLogDebug(@"Flurry native ad will present (adapter)");
+    if ([self.delegate respondsToSelector:@selector(nativeAdWillPresentModalForAdapter:)]) {
+        [self.delegate nativeAdWillPresentModalForAdapter:self];
+    }
 }
 
 - (void) adNativeWillLeaveApplication:(FlurryAdNative*) nativeAd {
     MPLogDebug(@"Flurry native ad will leave application (adapter)");
+    if ([self.delegate respondsToSelector:@selector(nativeAdWillLeaveApplicationFromAdapter:)]) {
+        [self.delegate nativeAdWillLeaveApplicationFromAdapter:self];
+    }
 }
 
 - (void) adNativeWillDismiss:(FlurryAdNative*) nativeAd {
@@ -126,6 +117,9 @@
 
 - (void) adNativeDidDismiss:(FlurryAdNative*) nativeAd {
     MPLogDebug(@"Flurry native ad did dismiss (adapter)");
+    if ([self.delegate respondsToSelector:@selector(nativeAdDidDismissModalForAdapter:)]) {
+        [self.delegate nativeAdDidDismissModalForAdapter:self];
+    }
 }
 
 - (void) adNativeDidReceiveClick:(FlurryAdNative*) nativeAd {
@@ -139,7 +133,11 @@
 
 - (void) adNativeDidLogImpression:(FlurryAdNative*) nativeAd {
     MPLogDebug(@"Flurry native ad was shown (adapter)");
-    
+    if ([self.delegate respondsToSelector:@selector(nativeAdWillLogImpression:)]) {
+        [self.delegate nativeAdWillLogImpression:self];
+    } else {
+        MPLogWarn(@"Delegate does not implement impression tracking callback. Impression likely not being tracked.");
+    }
 }
 
 @end

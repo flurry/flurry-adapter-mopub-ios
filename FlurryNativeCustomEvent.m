@@ -62,30 +62,4 @@
     [self.delegate nativeCustomEvent:self didFailToLoadAdWithError:errorDescription];
 }
 
-- (void) adNativeWillPresent:(FlurryAdNative*) nativeAd {
-    MPLogDebug(@"Flurry native ad will present (customEvent)");
-}
-
-- (void) adNativeWillLeaveApplication:(FlurryAdNative*) nativeAd {
-    MPLogDebug(@"Flurry native ad will leave application (customEvent)");
-}
-
-- (void) adNativeWillDismiss:(FlurryAdNative*) nativeAd {
-    MPLogDebug(@"Flurry native ad will dismiss (customEvent)");
-}
-
-- (void) adNativeDidDismiss:(FlurryAdNative*) nativeAd {
-    MPLogDebug(@"Flurry native ad did dismiss (customEvent)");
-}
-
-- (void) adNativeDidReceiveClick:(FlurryAdNative*) nativeAd {
-    MPLogDebug(@"Flurry native ad was clicked (customEvent)");
-}
-
-- (void) adNativeDidLogImpression:(FlurryAdNative*) nativeAd {
-    MPLogDebug(@"Flurry native ad was shown (customEvent)");
-    
-}
-
-
 @end
