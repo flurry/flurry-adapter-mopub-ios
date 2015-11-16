@@ -55,12 +55,35 @@
             key = [NSString stringWithFormat:@"flurry_%@", asset.name];
         }
         
-        if (key && asset.value) {
-            [props setObject:asset.value forKey:key];
+        id value = [self normalizeValueForKey:key value:asset.value];
+        
+        if (key && value) {
+            [props setObject:value forKey:key];
         }
     }
     
     return [props copy];
+}
+
+- (id)normalizeValueForKey:(NSString *)key value:(id)value {
+    id normalizedValue = value;
+    if ([key isEqualToString:kAdStarRatingKey]) {
+        if ([value isKindOfClass:[NSNumber class]]) {
+            CGFloat starRating = [value doubleValue];
+            if (starRating < kStarRatingMinValue || starRating > kStarRatingMaxValue) {
+                normalizedValue = nil; // star rating is out of bounds
+            }
+        } else if ([value isKindOfClass:[NSString class]]) {
+            // We assume the value is in the range [0, 100]
+            CGFloat starRating = [value doubleValue];
+            CGFloat normalizedStarRating = starRating / 100 * kUniversalStarRatingScale;
+            normalizedValue = [NSNumber numberWithDouble:normalizedStarRating];
+        } else {
+            normalizedValue = nil; // MoPub won't know what to do with this star rating
+        }
+    }
+    
+    return normalizedValue;
 }
 
 - (void)dealloc {
