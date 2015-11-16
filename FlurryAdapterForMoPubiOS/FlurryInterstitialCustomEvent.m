@@ -80,6 +80,7 @@
 
 - (void) adInterstitialDidRender:(FlurryAdInterstitial*)interstitialAd {
     MPLogDebug(@"Flurry interstital ad was rendered.");
+    [self.delegate interstitialCustomEventDidAppear:self];
     [self.delegate trackImpression];
 }
 
