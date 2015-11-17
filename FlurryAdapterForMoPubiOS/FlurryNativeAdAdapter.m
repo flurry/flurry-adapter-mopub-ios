@@ -29,37 +29,61 @@
         _adNative = adNative;
         _adNative.adDelegate = self;
         
-        NSMutableDictionary *props = [NSMutableDictionary dictionary];
-        for (int ix = 0; ix < adNative.assetList.count; ++ix) {
-            FlurryAdNativeAsset* asset = [adNative.assetList objectAtIndex:ix];
-            if ([asset.name isEqualToString:@"headline"]) {
-                [props setObject:asset.value forKey:kAdTitleKey];
-            }
-            
-            if ([asset.name isEqualToString:@"secImage"]) {
-                [props setObject:asset.value forKey:kAdIconImageKey];
-            }
-            
-            if ([asset.name isEqualToString:@"secHqImage"]) {
-                [props setObject:asset.value forKey:kAdMainImageKey];
-            }
-            
-            if ([asset.name isEqualToString:@"summary"]) {
-                [props setObject:asset.value forKey:kAdTextKey];
-            }
-           
-            if ([asset.name isEqualToString:@"appRating"]) {
-                [props setObject:asset.value forKey:kAdStarRatingKey];
-            }
-
-            if ([asset.name isEqualToString:@"callToAction"]) {
-                [props setObject:asset.value forKey:kAdCTATextKey];
-            }
-            
-        }
-        _properties = props;
+        _properties = [self convertAssetsToProperties:adNative];
     }
     return self;
+}
+
+- (NSDictionary *)convertAssetsToProperties:(FlurryAdNative *)adNative
+{
+    NSDictionary *flurryToMoPubPropertiesMap = @{
+                                                 @"headline": kAdTitleKey,
+                                                 @"secImage": kAdIconImageKey,
+                                                 @"secHqImage": kAdMainImageKey,
+                                                 @"summary": kAdTextKey,
+                                                 @"appRating": kAdStarRatingKey,
+                                                 @"callToAction": kAdCTATextKey
+                                                 };
+    
+    NSMutableDictionary *props = [NSMutableDictionary dictionary];
+    for (int ix = 0; ix < adNative.assetList.count; ++ix) {
+        FlurryAdNativeAsset* asset = [adNative.assetList objectAtIndex:ix];
+        NSString *key = flurryToMoPubPropertiesMap[asset.name];
+        if (key == nil) {
+            // If we don't have a mapping to one of the standard MoPub keys
+            // we still pass the data along using a non-standard key.
+            key = [NSString stringWithFormat:@"flurry_%@", asset.name];
+        }
+        
+        id value = [self normalizeValueForKey:key value:asset.value];
+        
+        if (key && value) {
+            [props setObject:value forKey:key];
+        }
+    }
+    
+    return [props copy];
+}
+
+- (id)normalizeValueForKey:(NSString *)key value:(id)value {
+    id normalizedValue = value;
+    if ([key isEqualToString:kAdStarRatingKey]) {
+        if ([value isKindOfClass:[NSNumber class]]) {
+            CGFloat starRating = [value doubleValue];
+            if (starRating < kStarRatingMinValue || starRating > kStarRatingMaxValue) {
+                normalizedValue = nil; // star rating is out of bounds
+            }
+        } else if ([value isKindOfClass:[NSString class]]) {
+            // We assume the value is in the range [0, 100]
+            CGFloat starRating = [value doubleValue];
+            CGFloat normalizedStarRating = starRating / 100 * kUniversalStarRatingScale;
+            normalizedValue = [NSNumber numberWithDouble:normalizedStarRating];
+        } else {
+            normalizedValue = nil; // MoPub won't know what to do with this star rating
+        }
+    }
+    
+    return normalizedValue;
 }
 
 - (void)dealloc {
