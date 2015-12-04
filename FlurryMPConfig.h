@@ -9,7 +9,6 @@
 #import <Foundation/Foundation.h>
 #import "Flurry.h"
 
-#define FlurryAPIKey @"YOUR_API_KEY"  // replace this with your own Flurry API key
 #define FlurryMediationOrigin @"Flurry_Mopub_iOS"
 #define FlurryAdapterVersion @"7.2.1"
 
@@ -31,6 +30,6 @@
 
 @interface FlurryMPConfig : NSObject
 
-+ (id)sharedInstance;
++ (void)initializeWithFlurryAPIKey:(NSString *)flurryAPIKey;
 
 @end

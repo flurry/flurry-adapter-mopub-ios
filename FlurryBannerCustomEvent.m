@@ -42,8 +42,6 @@
 - (void)requestAdWithSize:(CGSize)size customEventInfo:(NSDictionary *)info
 {
     MPLogInfo(@"MoPub instructs Flurry to display an ad, %@, of size: %f, %f" , self, size.width, size.height);
-    [FlurryMPConfig sharedInstance];
-    
     self.adSpaceName = [info objectForKey:@"adSpaceName"];
     if (!self.adSpaceName) {
         self.adSpaceName = FlurryBannerAdSpaceName;

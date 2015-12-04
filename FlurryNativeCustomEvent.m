@@ -12,7 +12,6 @@
 #import "MPNativeAd.h"
 #import "MPNativeAdError.h"
 #import "MPLogging.h"
-#import "FlurryMPConfig.h"
 
 @interface FlurryNativeCustomEvent () <FlurryAdNativeDelegate>
 
@@ -24,7 +23,6 @@
 
 - (void)requestAdWithCustomEventInfo:(NSDictionary *)info
 {
-    [FlurryMPConfig sharedInstance];
     NSString *adSpace = [info objectForKey:@"adSpaceName"];
     if (adSpace) {
         self.adNative = [[FlurryAdNative alloc] initWithSpace:adSpace];

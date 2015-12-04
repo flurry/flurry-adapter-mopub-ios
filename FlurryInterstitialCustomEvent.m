@@ -44,9 +44,7 @@
 
 - (void)requestInterstitialWithCustomEventInfo:(NSDictionary *)info
 {
-    MPLogInfo(@"MoPub instructs Flurry to display an interstitial ad");
-    [FlurryMPConfig sharedInstance];
-    
+    MPLogInfo(@"MoPub instructs Flurry to display an interstitial ad");    
     self.adSpaceName = [info objectForKey:@"adSpaceName"];
     if (!self.adSpaceName) {
         self.adSpaceName = FlurryInterstitialAdSpaceTakeoverName;
