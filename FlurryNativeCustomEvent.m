@@ -12,7 +12,6 @@
 #import "MPNativeAd.h"
 #import "MPNativeAdError.h"
 #import "MPLogging.h"
-#import "FlurryMPConfig.h"
 
 @interface FlurryNativeCustomEvent () <FlurryAdNativeDelegate>
 
@@ -24,7 +23,6 @@
 
 - (void)requestAdWithCustomEventInfo:(NSDictionary *)info
 {
-    [FlurryMPConfig sharedInstance];
     NSString *adSpace = [info objectForKey:@"adSpaceName"];
     if (adSpace) {
         self.adNative = [[FlurryAdNative alloc] initWithSpace:adSpace];
@@ -43,16 +41,6 @@
     FlurryNativeAdAdapter *adAdapter = [[FlurryNativeAdAdapter alloc] initWithFlurryAdNative:flurryAd];
     MPNativeAd *interfaceAd = [[MPNativeAd alloc] initWithAdAdapter:adAdapter];
     
-    NSMutableArray *imageURLs = [NSMutableArray array];
-    for (int ix = 0; ix < flurryAd.assetList.count; ++ix) {
-        FlurryAdNativeAsset* asset = [flurryAd.assetList objectAtIndex:ix];
-        if ([asset.name isEqualToString:@"secImage"]) {
-            [imageURLs addObject:[NSURL URLWithString:asset.value]];
-        }
-        if ([asset.name isEqualToString:@"secHqImage"]) {
-            [imageURLs addObject:[NSURL URLWithString:asset.value]];
-        }
-    }
     [self.delegate nativeCustomEvent:self didLoadAd:interfaceAd];
 }
 

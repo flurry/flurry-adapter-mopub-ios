@@ -10,22 +10,14 @@
 
 @implementation FlurryMPConfig
 
-+ (id)sharedInstance {
-    static FlurryMPConfig *si = nil;
++ (void)initializeWithFlurryAPIKey:(NSString *)flurryAPIKey
+{
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        si = [[self alloc] init];
-    });
-    return si;
-}
-
-- (id)init {
-    if (self = [super init]) {
-        [Flurry startSession:FlurryAPIKey];
+        [Flurry startSession:flurryAPIKey];
         [Flurry addOrigin:FlurryMediationOrigin withVersion:FlurryAdapterVersion];
         [Flurry setDebugLogEnabled:NO];
-    }
-    return self;
+    });
 }
 
 @end
