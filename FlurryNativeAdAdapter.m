@@ -34,6 +34,11 @@
     return self;
 }
 
+- (void)dealloc {
+    _adNative.adDelegate = nil;
+    _adNative = nil;
+}
+
 - (NSDictionary *)convertAssetsToProperties:(FlurryAdNative *)adNative
 {
     NSDictionary *flurryToMoPubPropertiesMap = @{
@@ -54,8 +59,13 @@
             // we still pass the data along using a non-standard key.
             key = [NSString stringWithFormat:@"flurry_%@", asset.name];
         }
-        
-        id value = [self normalizeValueForKey:key value:asset.value];
+
+        id value;
+        if ([key isEqualToString:kAdStarRatingKey]) {
+            value = [self getStarRatingValue:asset.value];
+        } else {
+            value = asset.value;
+        }
         
         if (key && value) {
             [props setObject:value forKey:key];
@@ -65,30 +75,21 @@
     return [props copy];
 }
 
-- (id)normalizeValueForKey:(NSString *)key value:(id)value {
-    id normalizedValue = value;
-    if ([key isEqualToString:kAdStarRatingKey]) {
-        if ([value isKindOfClass:[NSNumber class]]) {
-            CGFloat starRating = [value doubleValue];
-            if (starRating < kStarRatingMinValue || starRating > kStarRatingMaxValue) {
-                normalizedValue = nil; // star rating is out of bounds
-            }
-        } else if ([value isKindOfClass:[NSString class]]) {
-            // We assume the value is in the range [0, 100]
-            CGFloat starRating = [value doubleValue];
-            CGFloat normalizedStarRating = starRating / 100 * kUniversalStarRatingScale;
-            normalizedValue = [NSNumber numberWithDouble:normalizedStarRating];
+- (NSNumber *)getStarRatingValue:(NSString *)appRating {
+    CGFloat ratingValue = 0;
+    if ([appRating length] > 0) {
+        NSArray *ratingParts = [appRating componentsSeparatedByString:@"/"];
+        if ([ratingParts count] == 2) {
+            // Rating is in the form X/Y where 0 < X < 100, Y=100
+            CGFloat numer = [ratingParts[0] floatValue];
+            CGFloat denom = [ratingParts[1] floatValue];
+            ratingValue = (numer/denom) * kUniversalStarRatingScale;
         } else {
-            normalizedValue = nil; // MoPub won't know what to do with this star rating
+            // Rating is single digit X where 0 < X < 100
+            ratingValue = [ratingParts[0] floatValue] / 100.0 * kUniversalStarRatingScale;
         }
     }
-    
-    return normalizedValue;
-}
-
-- (void)dealloc {
-    _adNative.adDelegate = nil;
-    _adNative = nil;
+    return [NSNumber numberWithDouble:ratingValue];
 }
 
 #pragma mark - MPNativeAdAdapter

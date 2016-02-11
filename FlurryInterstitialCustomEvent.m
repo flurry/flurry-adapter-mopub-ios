@@ -32,7 +32,6 @@
 
 @interface  FlurryInterstitialCustomEvent()
 
-@property (nonatomic, strong) NSString *adSpaceName;
 @property (nonatomic, strong) UIView* adView;
 @property (nonatomic, strong) FlurryAdInterstitial* adInterstitial;
 
@@ -44,12 +43,21 @@
 
 - (void)requestInterstitialWithCustomEventInfo:(NSDictionary *)info
 {
-    MPLogInfo(@"MoPub instructs Flurry to display an interstitial ad");    
-    self.adSpaceName = [info objectForKey:@"adSpaceName"];
-    if (!self.adSpaceName) {
-        self.adSpaceName = FlurryInterstitialAdSpaceTakeoverName;
+    MPLogInfo(@"Requesting Flurry interstitial ad");
+    NSString *apiKey = [info objectForKey:@"apiKey"];
+    NSString *adSpaceName = [info objectForKey:@"adSpaceName"];
+    
+    if (!apiKey || !adSpaceName) {
+        MPLogError(@"Failed interstitial ad fetch. Missing required server extras [FLURRY_APIKEY and/or FLURRY_ADSPACE]");
+        [self.delegate interstitialCustomEvent:self didFailToLoadAdWithError:nil];
+        return;
+    } else {
+        MPLogInfo(@"Server info fetched from MoPub for Flurry. API key: %@. Ad space name: %@", apiKey, adSpaceName);
     }
-    self.adInterstitial = [[MPInstanceProvider sharedProvider] interstitialForSpace:self.adSpaceName delegate:self];
+    
+    [FlurryMPConfig startSessionWithApiKey:apiKey];
+    
+    self.adInterstitial = [[MPInstanceProvider sharedProvider] interstitialForSpace:adSpaceName delegate:self];
     [self.adInterstitial fetchAd];
 }
 

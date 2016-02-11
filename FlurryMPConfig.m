@@ -10,11 +10,10 @@
 
 @implementation FlurryMPConfig
 
-+ (void)initializeWithFlurryAPIKey:(NSString *)flurryAPIKey
-{
++ (void)startSessionWithApiKey:(NSString *)apiKey {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        [Flurry startSession:flurryAPIKey];
+        [Flurry startSession:apiKey];
         [Flurry addOrigin:FlurryMediationOrigin withVersion:FlurryAdapterVersion];
         [Flurry setDebugLogEnabled:NO];
     });

@@ -10,26 +10,10 @@
 #import "Flurry.h"
 
 #define FlurryMediationOrigin @"Flurry_Mopub_iOS"
-#define FlurryAdapterVersion @"7.2.1"
-
-/*
- * Provde adSpaceName param when configuring Flurry as the Custom Native Network
- * in the MoPub web interface {"adSpaceName": "YOUR_FLURRY_AD_SPACE_NAME"}.
- * If adSpaceName is not found, this adapter will use "BANNER_AD" as the Flurry ad space name.
- */
-#define FlurryBannerAdSpaceName @"BANNER_AD"
-#define FlurryBannerAdPlacement BANNER_BOTTOM
-
-/*
- * Provde adSpaceName param when configuring Flurry as the Custom Native Network
- * in the MoPub web interface {"adSpaceName": "YOUR_FLURRY_AD_SPACE_NAME"}.
- * If adSpaceName is not found, this adapter will use "TAKOVER_AD" as the Flurry ad space name
- */
-#define FlurryInterstitialAdSpaceTakeoverName @"TAKOVER_AD"
-#define FlurryInterstitialAdPlacement FULLSCREEN
+#define FlurryAdapterVersion @"7.5.1"
 
 @interface FlurryMPConfig : NSObject
 
-+ (void)initializeWithFlurryAPIKey:(NSString *)flurryAPIKey;
++ (void)startSessionWithApiKey:(NSString *) apiKey;
 
 @end

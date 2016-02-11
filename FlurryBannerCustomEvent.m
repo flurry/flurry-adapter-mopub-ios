@@ -7,10 +7,11 @@
 //
 
 #import "FlurryBannerCustomEvent.h"
-#import "MPInstanceProvider.h"
-#import "MPLogging.h"
 #import "FlurryAdBanner.h"
 #import "FlurryMPConfig.h"
+
+#import "MPInstanceProvider.h"
+#import "MPLogging.h"
 
 @interface MPInstanceProvider (FlurryBanners)
 
@@ -31,7 +32,6 @@
 
 @interface  FlurryBannerCustomEvent()
 
-@property (nonatomic, strong) NSString *adSpaceName;
 @property (nonatomic, strong) UIView* adView;
 @property (nonatomic, strong) FlurryAdBanner* adBanner;
 
@@ -41,13 +41,22 @@
 
 - (void)requestAdWithSize:(CGSize)size customEventInfo:(NSDictionary *)info
 {
-    MPLogInfo(@"MoPub instructs Flurry to display an ad, %@, of size: %f, %f" , self, size.width, size.height);
-    self.adSpaceName = [info objectForKey:@"adSpaceName"];
-    if (!self.adSpaceName) {
-        self.adSpaceName = FlurryBannerAdSpaceName;
+    MPLogInfo(@"Requesting Flurry banner ad of size: %f, %f" , size.width, size.height);
+    
+    NSString *apiKey = [info objectForKey:@"apiKey"];
+    NSString *adSpaceName = [info objectForKey:@"adSpaceName"];
+    
+    if (!apiKey || !adSpaceName) {
+        MPLogError(@"Failed banner ad fetch. Missing required server extras [FLURRY_APIKEY and/or FLURRY_ADSPACE]");
+        [self.delegate bannerCustomEvent:self didFailToLoadAdWithError:nil];
+        return;
+    } else {
+        MPLogInfo(@"Server info fetched from MoPub for Flurry. API key: %@. Ad space name: %@", apiKey, adSpaceName);
     }
     
-    self.adBanner = [[MPInstanceProvider sharedProvider] bannerForSpace:self.adSpaceName delegate:self];
+    [FlurryMPConfig startSessionWithApiKey:apiKey];
+    
+    self.adBanner = [[MPInstanceProvider sharedProvider] bannerForSpace:adSpaceName delegate:self];
     
     CGRect theRect = CGRectMake(0, 0, size.width, size.height);
     self.adView = [[UIView alloc] initWithFrame:theRect];
