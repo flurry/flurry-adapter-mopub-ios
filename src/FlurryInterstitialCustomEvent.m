@@ -22,7 +22,8 @@
 
 @implementation MPInstanceProvider (FlurryInterstitials)
 
-- (FlurryAdInterstitial *)interstitialForSpace:(NSString *)adSpace delegate:(id<FlurryAdInterstitialDelegate>)delegate {
+- (FlurryAdInterstitial *)interstitialForSpace:(NSString *)adSpace delegate:(id<FlurryAdInterstitialDelegate>)delegate
+{
     FlurryAdInterstitial *interstitial = [[FlurryAdInterstitial alloc] initWithSpace:adSpace];
     interstitial.adDelegate = delegate;
     return interstitial;
@@ -81,48 +82,58 @@
 
 #pragma mark - FlurryAdInterstitialDelegate
 
-- (void) adInterstitialDidFetchAd:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialDidFetchAd:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogInfo(@"Flurry interstital ad was fetched.");
     [self.delegate interstitialCustomEvent:self didLoadAd:interstitialAd];
 }
 
-- (void) adInterstitialDidRender:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialDidRender:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogDebug(@"Flurry interstital ad was rendered.");
     [self.delegate interstitialCustomEventDidAppear:self];
     [self.delegate trackImpression];
 }
 
-- (void) adInterstitialWillPresent:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialWillPresent:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogDebug(@"Flurry interstital ad will present.");
     [self.delegate interstitialCustomEventWillAppear:self];
 }
 
-- (void) adInterstitialWillLeaveApplication:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialWillLeaveApplication:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogDebug(@"Flurry interstital ad will leave application.");
     [self.delegate interstitialCustomEventWillLeaveApplication:self];
 }
 
-- (void) adInterstitialWillDismiss:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialWillDismiss:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogDebug(@"Flurry interstital ad will dismiss.");
     [self.delegate interstitialCustomEventWillDisappear:self];
 }
 
-- (void) adInterstitialDidDismiss:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialDidDismiss:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogDebug(@"Flurry interstital ad did dismiss.");
     [self.delegate interstitialCustomEventDidDisappear:self];
 }
 
-- (void) adInterstitialDidReceiveClick:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialDidReceiveClick:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogInfo(@"Flurry interstital ad was clicked.");
     [self.delegate trackClick];
     [self.delegate interstitialCustomEventDidReceiveTapEvent:self];
 }
 
-- (void) adInterstitialVideoDidFinish:(FlurryAdInterstitial*)interstitialAd {
+- (void) adInterstitialVideoDidFinish:(FlurryAdInterstitial*)interstitialAd
+{
     MPLogDebug(@"Flurry interstital video finished.");
 }
 
-- (void) adInterstitial:(FlurryAdInterstitial*) interstitialAd adError:(FlurryAdError) adError errorDescription:(NSError*) errorDescription {
+- (void) adInterstitial:(FlurryAdInterstitial*) interstitialAd
+                adError:(FlurryAdError) adError errorDescription:(NSError*) errorDescription
+{
     MPLogInfo(@"Flurry interstitial failed to load with error: %@", errorDescription.description);
     [self.delegate interstitialCustomEvent:self didFailToLoadAdWithError:nil];
 }

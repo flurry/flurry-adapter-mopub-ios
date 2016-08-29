@@ -14,6 +14,10 @@
 #import "MPLogging.h"
 #import "FlurryMPConfig.h"
 
+
+NSString *const kFlurryApiKey = @"apiKey";
+NSString *const kFlurryAdSpaceName = @"adSpaceName";
+
 @interface FlurryNativeCustomEvent () <FlurryAdNativeDelegate>
 
 @property (nonatomic, retain) FlurryAdNative *adNative;
@@ -25,8 +29,8 @@
 - (void)requestAdWithCustomEventInfo:(NSDictionary *)info
 {
     MPLogInfo(@"Requesting Flurry native ad");
-    NSString *apiKey = [info objectForKey:@"apiKey"];
-    NSString *adSpaceName = [info objectForKey:@"adSpaceName"];
+    NSString *apiKey = [info objectForKey:kFlurryApiKey];
+    NSString *adSpaceName = [info objectForKey:kFlurryAdSpaceName];
     
     if (!apiKey || !adSpaceName) {
         MPLogError(@"Failed native ad fetch. Missing required server extras [FLURRY_APIKEY and/or FLURRY_ADSPACE]");

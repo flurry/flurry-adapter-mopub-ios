@@ -10,7 +10,7 @@
 #import "Flurry.h"
 
 #define FlurryMediationOrigin @"Flurry_Mopub_iOS"
-#define FlurryAdapterVersion @"7.5.1"
+#define FlurryAdapterVersion @"7.6.6"
 
 @interface FlurryMPConfig : NSObject
 

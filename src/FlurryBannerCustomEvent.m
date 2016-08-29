@@ -21,7 +21,8 @@
 
 @implementation MPInstanceProvider (FlurryBanners)
 
-- (FlurryAdBanner*)bannerForSpace:(NSString *)adSpace delegate:(id<FlurryAdBannerDelegate>)delegate {
+- (FlurryAdBanner*)bannerForSpace:(NSString *)adSpace delegate:(id<FlurryAdBannerDelegate>)delegate
+{
     FlurryAdBanner *banner = [[FlurryAdBanner alloc] initWithSpace:adSpace];
     banner.adDelegate = delegate;
     return banner;
@@ -74,46 +75,56 @@
 
 #pragma mark - FlurryAdBannerDelegate
 
-- (void) adBannerDidFetchAd:(FlurryAdBanner *)bannerAd {
+- (void) adBannerDidFetchAd:(FlurryAdBanner *)bannerAd
+{
     MPLogInfo(@"Flurry banner ad fetched");
     [self.adBanner displayAdInView:self.adView viewControllerForPresentation:[self.delegate viewControllerForPresentingModalView]];
 }
 
-- (void) adBannerDidRender:(FlurryAdBanner*)bannerAd {
+- (void) adBannerDidRender:(FlurryAdBanner*)bannerAd
+{
     MPLogInfo(@"Flurry banner ad rendered");
     [self.delegate trackImpression];
     [self.delegate bannerCustomEvent:self didLoadAd:self.adView];
 }
 
-- (void) adBannerWillPresentFullscreen:(FlurryAdBanner*)bannerAd {
+- (void) adBannerWillPresentFullscreen:(FlurryAdBanner*)bannerAd
+{
     MPLogDebug(@"Flurry banner ad will present fullscreen");
 }
 
-- (void) adBannerWillLeaveApplication:(FlurryAdBanner*)bannerAd {
+- (void) adBannerWillLeaveApplication:(FlurryAdBanner*)bannerAd
+{
     MPLogDebug(@"Flurry banner ad will leave application");
     [self.delegate bannerCustomEventWillLeaveApplication:self];
 }
 
-- (void) adBannerWillDismissFullscreen:(FlurryAdBanner*)bannerAd {
+- (void) adBannerWillDismissFullscreen:(FlurryAdBanner*)bannerAd
+{
     MPLogDebug(@"Flurry banner ad will dismiss full screen");
 }
 
-- (void) adBannerDidDismissFullscreen:(FlurryAdBanner*)bannerAd {
+- (void) adBannerDidDismissFullscreen:(FlurryAdBanner*)bannerAd
+{
     MPLogDebug(@"Flurry banner ad was dismissed");
     [self.delegate bannerCustomEventDidFinishAction:self];
 }
 
-- (void) adBannerDidReceiveClick:(FlurryAdBanner*)bannerAd {
+- (void) adBannerDidReceiveClick:(FlurryAdBanner*)bannerAd
+{
     MPLogInfo(@"Flurry banner ad was clicked");
     [self.delegate trackClick];
     [self.delegate bannerCustomEventWillBeginAction:self];
 }
 
-- (void) adBannerVideoDidFinish:(FlurryAdBanner*)bannerAd {
+- (void) adBannerVideoDidFinish:(FlurryAdBanner*)bannerAd
+{
     MPLogDebug(@"Flurry banner ad video finished");
 }
 
-- (void) adBanner:(FlurryAdBanner*) bannerAd adError:(FlurryAdError) adError errorDescription:(NSError*) errorDescription; {
+- (void) adBanner:(FlurryAdBanner*) bannerAd
+          adError:(FlurryAdError) adError errorDescription:(NSError*) errorDescription;
+{
     MPLogInfo(@"Flurry banner failed to load with error: %@", errorDescription.description);
     [self.delegate bannerCustomEvent:self didFailToLoadAdWithError:errorDescription];
 }

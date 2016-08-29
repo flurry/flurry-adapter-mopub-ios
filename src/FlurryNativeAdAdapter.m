@@ -34,7 +34,8 @@
     return self;
 }
 
-- (void)dealloc {
+- (void)dealloc
+{
     _adNative.adDelegate = nil;
     _adNative = nil;
 }
@@ -75,7 +76,8 @@
     return [props copy];
 }
 
-- (NSNumber *)getStarRatingValue:(NSString *)appRating {
+- (NSNumber *)getStarRatingValue:(NSString *)appRating
+{
     CGFloat ratingValue = 0;
     if ([appRating length] > 0) {
         NSArray *ratingParts = [appRating componentsSeparatedByString:@"/"];
@@ -94,11 +96,6 @@
 
 #pragma mark - MPNativeAdAdapter
 
-- (NSTimeInterval)requiredSecondsForImpression
-{
-    return 0.0;
-}
-
 - (NSURL *)defaultActionURL
 {
     return nil;
@@ -113,6 +110,10 @@
 {
     self.adNative.trackingView = view;
     self.adNative.viewControllerForPresentation = [self.delegate viewControllerForPresentingModalView];
+    // Can only set FlurryAdNative#videoViewContainer after setting viewControllerForPresentation
+    if ([self.adNative isVideoAd]) {
+        self.adNative.videoViewContainer = self.videoViewContainer;
+    }
 }
 
 - (void)didDetachFromView:(UIView *)view
@@ -120,34 +121,44 @@
     [self.adNative removeTrackingView];
 }
 
+- (UIView *)mainMediaView
+{
+    return self.adNative.videoViewContainer;
+}
+
 #pragma mark - Flurry Ad Delegates
 
-- (void) adNativeWillPresent:(FlurryAdNative*) nativeAd {
+- (void) adNativeWillPresent:(FlurryAdNative*) nativeAd
+{
     MPLogDebug(@"Flurry native ad will present (adapter)");
     if ([self.delegate respondsToSelector:@selector(nativeAdWillPresentModalForAdapter:)]) {
         [self.delegate nativeAdWillPresentModalForAdapter:self];
     }
 }
 
-- (void) adNativeWillLeaveApplication:(FlurryAdNative*) nativeAd {
+- (void) adNativeWillLeaveApplication:(FlurryAdNative*) nativeAd
+{
     MPLogDebug(@"Flurry native ad will leave application (adapter)");
     if ([self.delegate respondsToSelector:@selector(nativeAdWillLeaveApplicationFromAdapter:)]) {
         [self.delegate nativeAdWillLeaveApplicationFromAdapter:self];
     }
 }
 
-- (void) adNativeWillDismiss:(FlurryAdNative*) nativeAd {
+- (void) adNativeWillDismiss:(FlurryAdNative*) nativeAd
+{
     MPLogDebug(@"Flurry native ad will dismiss (adapter)");
 }
 
-- (void) adNativeDidDismiss:(FlurryAdNative*) nativeAd {
+- (void) adNativeDidDismiss:(FlurryAdNative*) nativeAd
+{
     MPLogDebug(@"Flurry native ad did dismiss (adapter)");
     if ([self.delegate respondsToSelector:@selector(nativeAdDidDismissModalForAdapter:)]) {
         [self.delegate nativeAdDidDismissModalForAdapter:self];
     }
 }
 
-- (void) adNativeDidReceiveClick:(FlurryAdNative*) nativeAd {
+- (void) adNativeDidReceiveClick:(FlurryAdNative*) nativeAd
+{
     MPLogDebug(@"Flurry native ad was clicked (adapter)");
     if ([self.delegate respondsToSelector:@selector(nativeAdDidClick:)]) {
         [self.delegate nativeAdDidClick:self];
@@ -156,7 +167,8 @@
     }
 }
 
-- (void) adNativeDidLogImpression:(FlurryAdNative*) nativeAd {
+- (void) adNativeDidLogImpression:(FlurryAdNative*) nativeAd
+{
     MPLogDebug(@"Flurry native ad was shown (adapter)");
     if ([self.delegate respondsToSelector:@selector(nativeAdWillLogImpression:)]) {
         [self.delegate nativeAdWillLogImpression:self];
