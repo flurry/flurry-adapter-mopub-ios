@@ -1,8 +1,11 @@
-Flurry iOS Adapter for MoPub
-============================
+[Archived] Flurry iOS Adapter for MoPub
+=======================================
 
 Adapter version 7.6.6 - Updated 2016-08-29
 ------------------------------------------
+**NOTE**: Future updates to this adapter will no longer be provided here. The adapter will now be maintained as part of the 
+[MoPub SDK](https://github.com/mopub/mopub-ios-sdk) and latest versions can be obtained from there. To raise an issue regarding the adapter, 
+please contact support@flurry.com.
 
 This version of the adapter works with MoPub iOS SDK 4+. If using older versions of the MoPub SDK, please refer to
 [version 7.2.0](https://github.com/flurry/FlurryAdapterForMoPubiOS/tree/v7.2.0_for_mopub_pre_4.0.0) of the adapter.
